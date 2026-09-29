@@ -1,0 +1,42 @@
+name: gh-sync
+description: Publish Forgejo CI release artifacts to a GitHub release
+author: actions
+inputs:
+  repository:
+    description: GitHub repository in owner/repository form
+    required: true
+  token:
+    description: GitHub personal access token
+    required: true
+  tag:
+    description: Release tag (defaults to FORGEJO_REF_NAME or GITHUB_REF_NAME)
+    required: false
+  name:
+    description: Release name (defaults to the tag)
+    required: false
+  body:
+    description: Release description
+    required: false
+    default: ""
+  files:
+    description: Newline-separated files or glob patterns
+    required: false
+    default: ""
+  draft:
+    description: Create the release as a draft
+    required: false
+    default: "false"
+  prerelease:
+    description: Create the release as a prerelease
+    required: false
+    default: "false"
+  overwrite:
+    description: Replace assets that have the same filename
+    required: false
+    default: "true"
+runs:
+  using: docker
+  image: Dockerfile
+branding:
+  icon: upload-cloud
+  color: blue
