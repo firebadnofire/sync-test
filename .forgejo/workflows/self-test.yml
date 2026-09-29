@@ -14,9 +14,18 @@ jobs:
   self-test:
     runs-on: ubuntu-22.04
     steps:
-      # This runner image does not include Node.js, so the JavaScript-based
-      # checkout action cannot start. The repository is public; fetch the exact
-      # revision selected by Forgejo without introducing credentials.
+      # The label maps to the minimal ubuntu:22.04 image, which has neither
+      # Node.js nor Git. Install only the tools needed for a direct checkout.
+      - name: Install checkout prerequisites
+        shell: sh
+        run: |
+          set -eu
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install --yes --no-install-recommends ca-certificates git
+
+      # The repository is public; fetch the exact revision selected by Forgejo
+      # without introducing checkout credentials.
       - name: Check out the current gh-sync revision with Git
         shell: sh
         run: |

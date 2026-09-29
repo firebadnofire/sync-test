@@ -100,14 +100,14 @@ advertised by the online Linux runner.
 The workflow fetches the exact revision being tested with Git and invokes the
 root action locally with `uses: ./`, so Forgejo builds the current `Dockerfile`
 rather than using a previously published `gh-sync` tag. Direct Git checkout is
-used because the selected runner image does not include the Node.js runtime
-required by JavaScript checkout actions. The repository is public, so this
-checkout needs no additional credentials. The workflow uploads two small
-diagnostic assets to the stable `gh-sync-self-test` release, changes the primary
-asset, and invokes the action again with `overwrite: true`. A separate local
-verification action then queries the GitHub API, requires exactly one asset with
-each expected name, downloads the primary asset, and checks for the final
-`phase=overwrite` marker.
+used because the runner label maps to a minimal `ubuntu:22.04` image without the
+Node.js runtime required by JavaScript checkout actions. The workflow installs
+Git and CA certificates before checkout; because the repository is public, it
+needs no checkout credentials. It uploads two small diagnostic assets to the
+stable `gh-sync-self-test` release, changes the primary asset, and invokes the
+action again with `overwrite: true`. A separate local verification action then
+queries the GitHub API, requires exactly one asset with each expected name,
+downloads the primary asset, and checks for the final `phase=overwrite` marker.
 
 The dedicated release and its two assets intentionally remain in place and are
 reused on subsequent runs. A concurrency group serializes this workflow on
