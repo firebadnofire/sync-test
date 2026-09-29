@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -11,6 +12,11 @@ type Config struct {
 	Repository string
 	Token      string
 	IsFine     bool
+	Mirror     bool
+	SourceToken      string
+	SourceAPIURL     string
+	SourceOwner      string
+	SourceRepository string
 	Tag        string
 	Name       string
 	Body       string
@@ -25,6 +31,9 @@ type Raw struct {
 	Repository string
 	Token      string
 	IsFine     string
+	SourceToken      string
+	SourceAPIURL     string
+	SourceRepository string
 	Tag        string
 	Name       string
 	Body       string
@@ -77,9 +86,31 @@ func Parse(raw Raw) (Config, error) {
 		return Config{}, err
 	}
 
-	return Config{Owner: owner, Repository: repository, Token: raw.Token, IsFine: isFine, Tag: tag,
+	cfg := Config{Owner: owner, Repository: repository, Token: raw.Token, IsFine: isFine, Tag: tag,
 		Name: name, Body: raw.Body, Files: raw.Files, Draft: draft,
-		Prerelease: prerelease, Overwrite: overwrite}, nil
+		Prerelease: prerelease, Overwrite: overwrite}
+
+	if strings.TrimSpace(raw.SourceToken) == "" {
+		return cfg, nil
+	}
+	sourceOwner, sourceRepository, err := ParseRepository(raw.SourceRepository)
+	if err != nil {
+		return Config{}, fmt.Errorf("invalid source repository: %w", err)
+	}
+	sourceAPIURL := strings.TrimRight(strings.TrimSpace(raw.SourceAPIURL), "/")
+	parsedURL, err := url.Parse(sourceAPIURL)
+	if err != nil || parsedURL.Scheme != "https" || parsedURL.Host == "" {
+		return Config{}, fmt.Errorf("invalid source API URL %q: expected an HTTPS URL", sourceAPIURL)
+	}
+	if strings.TrimSpace(raw.Name) != "" || raw.Body != "" || strings.TrimSpace(raw.Files) != "" || draft || prerelease || !overwrite {
+		return Config{}, fmt.Errorf("name, body, files, draft, prerelease, and overwrite=false are legacy-mode inputs and cannot be used with source_token")
+	}
+	cfg.Mirror = true
+	cfg.SourceToken = raw.SourceToken
+	cfg.SourceAPIURL = sourceAPIURL
+	cfg.SourceOwner = sourceOwner
+	cfg.SourceRepository = sourceRepository
+	return cfg, nil
 }
 
 func ParseRepository(value string) (string, string, error) {
