@@ -89,21 +89,24 @@ For GitHub Enterprise Server or API-compatible testing, set
 
 ## Integration self-test
 
-The manually triggered Forgejo workflow
-`.forgejo/workflows/self-test.yml` tests the current checkout end to end against
-the dedicated GitHub publishing endpoint `firebadnofire/sync-test`. Configure a
-Forgejo repository secret named `GH_SYNC_TOKEN` with permission to read and
-write releases in that GitHub repository, then open the repository's Actions
-page and run **gh-sync integration self-test**. The job targets the
-`ubuntu-22.04` label advertised by the online Linux runner.
+The Forgejo workflow `.forgejo/workflows/self-test.yml` tests the current
+checkout end to end against the dedicated GitHub publishing endpoint
+`firebadnofire/sync-test`. It runs for every pushed commit and can also be
+started manually from the repository's Actions page. Configure a Forgejo
+repository secret named `GH_SYNC_TOKEN` with permission to read and write
+releases in that GitHub repository. The job targets the `ubuntu-22.04` label
+advertised by the online Linux runner.
 
-The workflow checks out the revision being tested and invokes the root action
-locally with `uses: ./`, so Forgejo builds the current `Dockerfile` rather than
-using a previously published `gh-sync` tag. It uploads two small diagnostic
-assets to the stable `gh-sync-self-test` release, changes the primary asset, and
-invokes the action again with `overwrite: true`. A separate local verification
-action then queries the GitHub API, requires exactly one asset with each expected
-name, downloads the primary asset, and checks for the final
+The workflow fetches the exact revision being tested with Git and invokes the
+root action locally with `uses: ./`, so Forgejo builds the current `Dockerfile`
+rather than using a previously published `gh-sync` tag. Direct Git checkout is
+used because the selected runner image does not include the Node.js runtime
+required by JavaScript checkout actions. The repository is public, so this
+checkout needs no additional credentials. The workflow uploads two small
+diagnostic assets to the stable `gh-sync-self-test` release, changes the primary
+asset, and invokes the action again with `overwrite: true`. A separate local
+verification action then queries the GitHub API, requires exactly one asset with
+each expected name, downloads the primary asset, and checks for the final
 `phase=overwrite` marker.
 
 The dedicated release and its two assets intentionally remain in place and are

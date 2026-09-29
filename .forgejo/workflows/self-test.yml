@@ -1,6 +1,7 @@
 name: gh-sync integration self-test
 
 on:
+  push:
   workflow_dispatch:
 
 # The test intentionally reuses one release and fixed asset names. Queue runs so
@@ -13,8 +14,20 @@ jobs:
   self-test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Check out the current gh-sync revision
-        uses: https://data.forgejo.org/actions/checkout@v6
+      # This runner image does not include Node.js, so the JavaScript-based
+      # checkout action cannot start. The repository is public; fetch the exact
+      # revision selected by Forgejo without introducing credentials.
+      - name: Check out the current gh-sync revision with Git
+        shell: sh
+        run: |
+          set -eu
+          server_url=${FORGEJO_SERVER_URL:-${GITHUB_SERVER_URL:?}}
+          repository=${FORGEJO_REPOSITORY:-${GITHUB_REPOSITORY:?}}
+          revision=${FORGEJO_SHA:-${GITHUB_SHA:?}}
+          git init .
+          git remote add origin "${server_url}/${repository}.git"
+          git fetch --no-tags --depth=1 origin "${revision}"
+          git checkout --detach FETCH_HEAD
 
       - name: Generate initial test artifacts
         shell: sh
