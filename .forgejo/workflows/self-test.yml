@@ -22,7 +22,7 @@ jobs:
           set -eu
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
-          apt-get install --yes --no-install-recommends ca-certificates git
+          apt-get install --yes --no-install-recommends ca-certificates curl git jq
 
       # The repository is public; fetch the exact revision selected by Forgejo
       # without introducing checkout credentials.
@@ -59,7 +59,13 @@ jobs:
             echo 'target repository: firebadnofire/sync-test'
           } > self-test/gh-sync-self-test-secondary.txt
 
-      - name: Publish initial assets with the current checkout
+      - name: Publish initial ASCII assets to the Forgejo source release
+        shell: sh
+        env:
+          FORGEJO_TOKEN: ${{ forgejo.token }}
+        run: ./integration/publish-forgejo-self-test.sh
+
+      - name: Mirror initial assets to GitHub with the current checkout
         uses: ./
         with:
           repository: firebadnofire/sync-test
@@ -88,7 +94,13 @@ jobs:
             echo "run id: ${FORGEJO_RUN_ID:-${GITHUB_RUN_ID:-unknown}}"
           } > self-test/gh-sync-self-test.txt
 
-      - name: Republish the same asset names
+      - name: Replace assets in the Forgejo source release
+        shell: sh
+        env:
+          FORGEJO_TOKEN: ${{ forgejo.token }}
+        run: ./integration/publish-forgejo-self-test.sh
+
+      - name: Mirror the replaced asset names to GitHub
         uses: ./
         with:
           repository: firebadnofire/sync-test

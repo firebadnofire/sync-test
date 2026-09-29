@@ -10,6 +10,16 @@ import (
 	"testing"
 )
 
+type closeTrackingReader struct {
+	*strings.Reader
+	closed bool
+}
+
+func (r *closeTrackingReader) Close() error {
+	r.closed = true
+	return nil
+}
+
 func TestReleaseLifecycleRequests(t *testing.T) {
 	var requests []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,9 +77,13 @@ func TestReleaseLifecycleRequests(t *testing.T) {
 	if err := client.DeleteAsset(ctx, "owner", "repo", 9); err != nil {
 		t.Fatal(err)
 	}
-	asset, err := client.UploadAsset(ctx, release.UploadURL, "my artifact.zip", "application/zip", int64(len("payload")), strings.NewReader("payload"))
+	uploadBody := &closeTrackingReader{Reader: strings.NewReader("payload")}
+	asset, err := client.UploadAsset(ctx, release.UploadURL, "my artifact.zip", "application/zip", int64(len("payload")), uploadBody)
 	if err != nil || asset.ID != 10 {
 		t.Fatalf("upload = %#v, %v", asset, err)
+	}
+	if uploadBody.closed {
+		t.Fatal("UploadAsset closed a reader owned by its caller")
 	}
 	if len(requests) != 5 {
 		t.Fatalf("requests = %#v", requests)

@@ -34,12 +34,22 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
+// readerOnly prevents net/http from taking ownership of an io.Closer supplied
+// by the caller. UploadAsset's caller remains responsible for closing files.
+type readerOnly struct {
+	io.Reader
+}
+
 func (c *Client) do(ctx context.Context, method, endpoint string, body io.Reader, contentType string, out any) (*http.Response, error) {
 	return c.doWithContentLength(ctx, method, endpoint, body, contentType, -1, out)
 }
 
 func (c *Client) doWithContentLength(ctx context.Context, method, endpoint string, body io.Reader, contentType string, contentLength int64, out any) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, endpoint, body)
+	requestBody := body
+	if body != nil && contentLength >= 0 {
+		requestBody = readerOnly{Reader: body}
+	}
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, requestBody)
 	if err != nil {
 		return nil, err
 	}
