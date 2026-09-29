@@ -61,6 +61,23 @@ func TestParseTagAndNameDefaults(t *testing.T) {
 	}
 }
 
+func TestParseTokenType(t *testing.T) {
+	base := Raw{Repository: "owner/repo", Token: "secret", Tag: "v1"}
+	classic, err := Parse(base)
+	if err != nil || classic.IsFine {
+		t.Fatalf("classic config = %#v, %v", classic, err)
+	}
+	base.IsFine = "true"
+	fine, err := Parse(base)
+	if err != nil || !fine.IsFine {
+		t.Fatalf("fine config = %#v, %v", fine, err)
+	}
+	base.IsFine = "classic"
+	if _, err := Parse(base); err == nil {
+		t.Fatal("invalid is_fine unexpectedly succeeded")
+	}
+}
+
 func merge(a, b Raw) Raw {
 	if b.Tag != "" {
 		a.Tag = b.Tag

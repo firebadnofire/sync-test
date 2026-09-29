@@ -10,6 +10,7 @@ type Config struct {
 	Owner      string
 	Repository string
 	Token      string
+	IsFine     bool
 	Tag        string
 	Name       string
 	Body       string
@@ -23,6 +24,7 @@ type Config struct {
 type Raw struct {
 	Repository string
 	Token      string
+	IsFine     string
 	Tag        string
 	Name       string
 	Body       string
@@ -41,6 +43,10 @@ func Parse(raw Raw) (Config, error) {
 	}
 	if strings.TrimSpace(raw.Token) == "" {
 		return Config{}, fmt.Errorf("token is required")
+	}
+	isFine, err := ParseBool("is_fine", raw.IsFine, false)
+	if err != nil {
+		return Config{}, err
 	}
 
 	tag := strings.TrimSpace(raw.Tag)
@@ -71,7 +77,7 @@ func Parse(raw Raw) (Config, error) {
 		return Config{}, err
 	}
 
-	return Config{Owner: owner, Repository: repository, Token: raw.Token, Tag: tag,
+	return Config{Owner: owner, Repository: repository, Token: raw.Token, IsFine: isFine, Tag: tag,
 		Name: name, Body: raw.Body, Files: raw.Files, Draft: draft,
 		Prerelease: prerelease, Overwrite: overwrite}, nil
 }

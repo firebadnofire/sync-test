@@ -47,7 +47,7 @@ func TestReleaseLifecycleRequests(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient("test-token", server.URL, server.Client())
+	client := NewClient("test-token", true, server.URL, server.Client())
 	ctx := context.Background()
 	release, found, err := client.GetReleaseByTag(ctx, "owner", "repo", "v1.0.0")
 	if err != nil || !found || release.ID != 7 {
@@ -74,12 +74,15 @@ func TestReleaseLifecycleRequests(t *testing.T) {
 }
 
 func TestGetReleaseNotFound(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "token token" {
+			t.Errorf("Authorization = %q; want classic token scheme", got)
+		}
 		w.WriteHeader(http.StatusNotFound)
 		io.WriteString(w, `{"message":"Not Found"}`)
 	}))
 	defer server.Close()
-	client := NewClient("token", server.URL, server.Client())
+	client := NewClient("token", false, server.URL, server.Client())
 	release, found, err := client.GetReleaseByTag(context.Background(), "owner", "repo", "missing")
 	if err != nil || found || release != nil {
 		t.Fatalf("lookup = %#v, %v, %v", release, found, err)
@@ -92,7 +95,7 @@ func TestAPIErrorIncludesStatusAndMessage(t *testing.T) {
 		io.WriteString(w, `{"message":"Bad credentials: super-secret"}`)
 	}))
 	defer server.Close()
-	client := NewClient("super-secret", server.URL, server.Client())
+	client := NewClient("super-secret", false, server.URL, server.Client())
 	_, _, err := client.GetReleaseByTag(context.Background(), "owner", "repo", "v1")
 	if err == nil || !strings.Contains(err.Error(), "HTTP 401: Bad credentials: ***") || strings.Contains(err.Error(), "super-secret") {
 		t.Fatalf("error = %v", err)

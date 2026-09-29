@@ -35,3 +35,16 @@ func TestValidateAssetsRequiresExactlyOneOfEach(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTokenType(t *testing.T) {
+	for _, test := range []struct {
+		value   string
+		want    bool
+		wantErr bool
+	}{{"", false, false}, {"false", false, false}, {"TRUE", true, false}, {"classic", false, true}} {
+		got, err := parseTokenType(test.value)
+		if got != test.want || (err != nil) != test.wantErr {
+			t.Errorf("parseTokenType(%q) = %v, %v", test.value, got, err)
+		}
+	}
+}

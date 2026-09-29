@@ -8,6 +8,10 @@ inputs:
   token:
     description: GitHub personal access token
     required: true
+  is_fine:
+    description: Whether token is fine-grained (true) or classic (false)
+    required: false
+    default: "false"
   tag:
     description: Release tag (defaults to FORGEJO_REF_NAME or GITHUB_REF_NAME)
     required: false

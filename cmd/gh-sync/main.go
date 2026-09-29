@@ -23,6 +23,7 @@ func main() {
 func run() error {
 	repository := flag.String("repository", env("INPUT_REPOSITORY", ""), "GitHub repository (owner/repository)")
 	token := flag.String("token", env("INPUT_TOKEN", ""), "GitHub token (prefer INPUT_TOKEN)")
+	isFine := flag.String("is-fine", env("INPUT_IS_FINE", "false"), "whether the token is fine-grained")
 	tag := flag.String("tag", env("INPUT_TAG", ""), "release tag")
 	name := flag.String("name", env("INPUT_NAME", ""), "release name")
 	body := flag.String("body", env("INPUT_BODY", ""), "release body")
@@ -34,7 +35,7 @@ func run() error {
 	flag.Parse()
 
 	cfg, err := config.Parse(config.Raw{
-		Repository: *repository, Token: *token, Tag: *tag, Name: *name, Body: *body,
+		Repository: *repository, Token: *token, IsFine: *isFine, Tag: *tag, Name: *name, Body: *body,
 		Files: *filePatterns, Draft: *draft, Prerelease: *prerelease, Overwrite: *overwrite,
 		ForgejoRef: os.Getenv("FORGEJO_REF_NAME"), GitHubRef: os.Getenv("GITHUB_REF_NAME"),
 	})
@@ -42,7 +43,7 @@ func run() error {
 		return err
 	}
 	logger := log.New(os.Stdout, "gh-sync: ", 0)
-	client := github.NewClient(cfg.Token, *apiURL, nil)
+	client := github.NewClient(cfg.Token, cfg.IsFine, *apiURL, nil)
 	return synchronizer.Run(context.Background(), cfg, client, logger)
 }
 

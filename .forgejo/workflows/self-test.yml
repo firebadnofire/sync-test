@@ -63,7 +63,8 @@ jobs:
         uses: ./
         with:
           repository: firebadnofire/sync-test
-          token: ${{ secrets.GH_SYNC_TOKEN }}
+          token: ${{ secrets.GH_KEY }}
+          is_fine: false
           tag: gh-sync-self-test
           name: gh-sync integration self-test
           body: |
@@ -91,7 +92,8 @@ jobs:
         uses: ./
         with:
           repository: firebadnofire/sync-test
-          token: ${{ secrets.GH_SYNC_TOKEN }}
+          token: ${{ secrets.GH_KEY }}
+          is_fine: false
           tag: gh-sync-self-test
           name: gh-sync integration self-test
           body: |
@@ -105,4 +107,5 @@ jobs:
       - name: Independently verify the GitHub release and downloaded content
         uses: ./integration/verify-self-test
         with:
-          token: ${{ secrets.GH_SYNC_TOKEN }}
+          token: ${{ secrets.GH_KEY }}
+          is_fine: false

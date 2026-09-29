@@ -16,17 +16,18 @@ const defaultBaseURL = "https://api.github.com"
 type Client struct {
 	baseURL    string
 	token      string
+	isFine     bool
 	httpClient *http.Client
 }
 
-func NewClient(token, baseURL string, httpClient *http.Client) *Client {
+func NewClient(token string, isFine bool, baseURL string, httpClient *http.Client) *Client {
 	if strings.TrimSpace(baseURL) == "" {
 		baseURL = defaultBaseURL
 	}
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, httpClient: httpClient}
+	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, isFine: isFine, httpClient: httpClient}
 }
 
 type apiError struct {
@@ -38,7 +39,11 @@ func (c *Client) do(ctx context.Context, method, endpoint string, body io.Reader
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	authScheme := "token"
+	if c.isFine {
+		authScheme = "Bearer"
+	}
+	req.Header.Set("Authorization", authScheme+" "+c.token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	req.Header.Set("User-Agent", "actions/gh-sync")

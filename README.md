@@ -14,7 +14,8 @@ branches, commits, tags, issues, pull requests, or any other repository state.
   uses: https://pubcode.archuser.org/actions/gh-sync@v1
   with:
     repository: firebadnofire/example
-    token: ${{ secrets.GH_SYNC_TOKEN }}
+    token: ${{ secrets.GH_KEY }}
+    is_fine: true
     tag: ${{ forgejo.ref_name }}
     name: Example ${{ forgejo.ref_name }}
     body: Built and published by Forgejo CI.
@@ -27,7 +28,8 @@ branches, commits, tags, issues, pull requests, or any other repository state.
 
 The token must be able to read and write releases in the target GitHub
 repository. Keep it in a Forgejo secret; `gh-sync` never writes the token to its
-logs.
+logs. Set `is_fine: true` for a fine-grained personal access token or
+`is_fine: false` for a classic personal access token.
 
 ### Inputs
 
@@ -35,6 +37,7 @@ logs.
 | --- | --- | --- | --- |
 | `repository` | yes | | GitHub repository in `owner/repository` form |
 | `token` | yes | | GitHub personal access token |
+| `is_fine` | no | `false` | `true` for a fine-grained PAT; `false` for a classic PAT |
 | `tag` | no | current ref | Release tag; falls back to `FORGEJO_REF_NAME`, then `GITHUB_REF_NAME` |
 | `name` | no | release tag | Release display name |
 | `body` | no | empty | Release description |
@@ -72,16 +75,17 @@ The same program can be built and run directly:
 ```sh
 go build -o gh-sync ./cmd/gh-sync
 
-INPUT_TOKEN="$GH_SYNC_TOKEN" ./gh-sync \
+INPUT_TOKEN="$GH_KEY" ./gh-sync \
   -repository firebadnofire/example \
+  -is-fine=true \
   -tag v1.2.3 \
   -files $'dist/*.tar.gz\ndist/SHA256SUMS'
 ```
 
 Flags correspond to the action inputs. Defaults are read from the standard
-`INPUT_REPOSITORY`, `INPUT_TOKEN`, `INPUT_TAG`, `INPUT_NAME`, `INPUT_BODY`,
-`INPUT_FILES`, `INPUT_DRAFT`, `INPUT_PRERELEASE`, and `INPUT_OVERWRITE`
-environment variables. Flags override those values.
+`INPUT_REPOSITORY`, `INPUT_TOKEN`, `INPUT_IS_FINE`, `INPUT_TAG`, `INPUT_NAME`,
+`INPUT_BODY`, `INPUT_FILES`, `INPUT_DRAFT`, `INPUT_PRERELEASE`, and
+`INPUT_OVERWRITE` environment variables. Flags override those values.
 
 For GitHub Enterprise Server or API-compatible testing, set
 `GH_SYNC_API_URL` or pass `-api-url`. The default is
@@ -92,9 +96,10 @@ For GitHub Enterprise Server or API-compatible testing, set
 The Forgejo workflow `.forgejo/workflows/self-test.yml` tests the current
 checkout end to end against the dedicated GitHub publishing endpoint
 `firebadnofire/sync-test`. It runs for every pushed commit and can also be
-started manually from the repository's Actions page. Configure a Forgejo
-repository secret named `GH_SYNC_TOKEN` with permission to read and write
-releases in that GitHub repository. The job targets the `ubuntu-22.04` label
+started manually from the repository's Actions page. Configure the classic
+GitHub personal access token as the Forgejo repository secret `GH_KEY`, with
+permission to read and write releases in that GitHub repository. The workflow
+passes `is_fine: false` explicitly. The job targets the `ubuntu-22.04` label
 advertised by the online Linux runner.
 
 The workflow fetches the exact revision being tested with Git and invokes the
@@ -123,7 +128,7 @@ credentials.
 The project uses only the Go standard library.
 
 ```sh
-gofmt -w cmd internal
+gofmt -w cmd internal integration
 go test ./...
 go vet ./...
 ```

@@ -25,6 +25,7 @@ const (
 
 type verifier struct {
 	token  string
+	isFine bool
 	client *http.Client
 }
 
@@ -52,9 +53,13 @@ func main() {
 func run() error {
 	token := strings.TrimSpace(os.Getenv("INPUT_TOKEN"))
 	if token == "" {
-		return fmt.Errorf("token input is required; configure the GH_SYNC_TOKEN Forgejo secret")
+		return fmt.Errorf("token input is required; configure the GH_KEY Forgejo secret")
 	}
-	v := verifier{token: token, client: &http.Client{Timeout: 2 * time.Minute}}
+	isFine, err := parseTokenType(os.Getenv("INPUT_IS_FINE"))
+	if err != nil {
+		return err
+	}
+	v := verifier{token: token, isFine: isFine, client: &http.Client{Timeout: 2 * time.Minute}}
 	ctx := context.Background()
 
 	var foundRelease release
@@ -122,6 +127,17 @@ func validateAssets(assets []asset) (int64, error) {
 	return primaryID, nil
 }
 
+func parseTokenType(value string) (bool, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "false":
+		return false, nil
+	case "true":
+		return true, nil
+	default:
+		return false, fmt.Errorf("invalid is_fine value %q: expected true or false", value)
+	}
+}
+
 func (v verifier) getJSON(ctx context.Context, endpoint string, destination any) error {
 	contents, err := v.request(ctx, endpoint, "application/vnd.github+json")
 	if err != nil {
@@ -142,7 +158,11 @@ func (v verifier) request(ctx context.Context, endpoint, accept string) ([]byte,
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+v.token)
+	authScheme := "token"
+	if v.isFine {
+		authScheme = "Bearer"
+	}
+	req.Header.Set("Authorization", authScheme+" "+v.token)
 	req.Header.Set("Accept", accept)
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	req.Header.Set("User-Agent", "actions/gh-sync-self-test")
