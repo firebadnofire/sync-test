@@ -3,6 +3,7 @@ package sync
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -38,8 +39,11 @@ func (f *fakeGitHub) DeleteAsset(_ context.Context, _, _ string, id int64) error
 	f.deleted = append(f.deleted, id)
 	return nil
 }
-func (f *fakeGitHub) UploadAsset(_ context.Context, _ string, name, _ string, body io.Reader) (*github.Asset, error) {
+func (f *fakeGitHub) UploadAsset(_ context.Context, _ string, name, _ string, size int64, body io.Reader) (*github.Asset, error) {
 	data, _ := io.ReadAll(body)
+	if int64(len(data)) != size {
+		return nil, fmt.Errorf("size %d does not match body length %d", size, len(data))
+	}
 	f.uploadedNames = append(f.uploadedNames, name)
 	f.uploadedData = append(f.uploadedData, string(data))
 	return &github.Asset{Name: name}, nil

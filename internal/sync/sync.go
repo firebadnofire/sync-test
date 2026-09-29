@@ -19,7 +19,7 @@ type GitHub interface {
 	CreateRelease(context.Context, string, string, github.CreateReleaseRequest) (*github.Release, error)
 	ListAssets(context.Context, string, string, int64) ([]github.Asset, error)
 	DeleteAsset(context.Context, string, string, int64) error
-	UploadAsset(context.Context, string, string, string, io.Reader) (*github.Asset, error)
+	UploadAsset(context.Context, string, string, string, int64, io.Reader) (*github.Asset, error)
 }
 
 func Run(ctx context.Context, cfg config.Config, client GitHub, logger *log.Logger) error {
@@ -81,8 +81,13 @@ func Run(ctx context.Context, cfg config.Config, client GitHub, logger *log.Logg
 		if err != nil {
 			return fmt.Errorf("open asset %q: %w", path, err)
 		}
+		info, err := file.Stat()
+		if err != nil {
+			file.Close()
+			return fmt.Errorf("inspect asset %q: %w", path, err)
+		}
 		contentType := mime.TypeByExtension(filepath.Ext(path))
-		_, uploadErr := client.UploadAsset(ctx, release.UploadURL, name, contentType, file)
+		_, uploadErr := client.UploadAsset(ctx, release.UploadURL, name, contentType, info.Size(), file)
 		closeErr := file.Close()
 		if uploadErr != nil {
 			return fmt.Errorf("upload asset %q: %w", name, uploadErr)

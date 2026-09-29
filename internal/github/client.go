@@ -35,9 +35,16 @@ type apiError struct {
 }
 
 func (c *Client) do(ctx context.Context, method, endpoint string, body io.Reader, contentType string, out any) (*http.Response, error) {
+	return c.doWithContentLength(ctx, method, endpoint, body, contentType, -1, out)
+}
+
+func (c *Client) doWithContentLength(ctx context.Context, method, endpoint string, body io.Reader, contentType string, contentLength int64, out any) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, endpoint, body)
 	if err != nil {
 		return nil, err
+	}
+	if contentLength >= 0 {
+		req.ContentLength = contentLength
 	}
 	authScheme := "token"
 	if c.isFine {

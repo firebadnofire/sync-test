@@ -36,6 +36,9 @@ func TestReleaseLifecycleRequests(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		case r.Method == http.MethodPost && r.URL.Path == "/upload":
 			data, _ := io.ReadAll(r.Body)
+			if r.ContentLength != int64(len("payload")) {
+				t.Errorf("upload Content-Length = %d; want %d", r.ContentLength, len("payload"))
+			}
 			if r.URL.Query().Get("name") != "my artifact.zip" || string(data) != "payload" {
 				t.Errorf("upload name/body = %q/%q", r.URL.Query().Get("name"), data)
 			}
@@ -64,7 +67,7 @@ func TestReleaseLifecycleRequests(t *testing.T) {
 	if err := client.DeleteAsset(ctx, "owner", "repo", 9); err != nil {
 		t.Fatal(err)
 	}
-	asset, err := client.UploadAsset(ctx, release.UploadURL, "my artifact.zip", "application/zip", strings.NewReader("payload"))
+	asset, err := client.UploadAsset(ctx, release.UploadURL, "my artifact.zip", "application/zip", int64(len("payload")), strings.NewReader("payload"))
 	if err != nil || asset.ID != 10 {
 		t.Fatalf("upload = %#v, %v", asset, err)
 	}

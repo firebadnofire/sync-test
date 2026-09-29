@@ -75,7 +75,7 @@ func (c *Client) DeleteAsset(ctx context.Context, owner, repository string, asse
 	return nil
 }
 
-func (c *Client) UploadAsset(ctx context.Context, uploadURL, name, contentType string, body io.Reader) (*Asset, error) {
+func (c *Client) UploadAsset(ctx context.Context, uploadURL, name, contentType string, contentLength int64, body io.Reader) (*Asset, error) {
 	if before, _, found := strings.Cut(uploadURL, "{"); found {
 		uploadURL = before
 	}
@@ -90,7 +90,7 @@ func (c *Client) UploadAsset(ctx context.Context, uploadURL, name, contentType s
 		contentType = "application/octet-stream"
 	}
 	var asset Asset
-	if _, err := c.do(ctx, http.MethodPost, parsed.String(), body, contentType, &asset); err != nil {
+	if _, err := c.doWithContentLength(ctx, http.MethodPost, parsed.String(), body, contentType, contentLength, &asset); err != nil {
 		return nil, fmt.Errorf("GitHub asset upload failed: %w", err)
 	}
 	return &asset, nil
