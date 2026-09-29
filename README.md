@@ -94,7 +94,8 @@ The manually triggered Forgejo workflow
 the dedicated GitHub publishing endpoint `firebadnofire/sync-test`. Configure a
 Forgejo repository secret named `GH_SYNC_TOKEN` with permission to read and
 write releases in that GitHub repository, then open the repository's Actions
-page and run **gh-sync integration self-test**.
+page and run **gh-sync integration self-test**. The job targets the
+`ubuntu-22.04` label advertised by the online Linux runner.
 
 The workflow checks out the revision being tested and invokes the root action
 locally with `uses: ./`, so Forgejo builds the current `Dockerfile` rather than

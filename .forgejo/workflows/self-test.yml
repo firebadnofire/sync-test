@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   self-test:
-    runs-on: docker
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out the current gh-sync revision
         uses: https://data.forgejo.org/actions/checkout@v6
