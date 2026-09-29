@@ -87,6 +87,33 @@ For GitHub Enterprise Server or API-compatible testing, set
 `GH_SYNC_API_URL` or pass `-api-url`. The default is
 `https://api.github.com`.
 
+## Integration self-test
+
+The manually triggered Forgejo workflow
+`.forgejo/workflows/self-test.yml` tests the current checkout end to end against
+the dedicated GitHub publishing endpoint `firebadnofire/sync-test`. Configure a
+Forgejo repository secret named `GH_SYNC_TOKEN` with permission to read and
+write releases in that GitHub repository, then open the repository's Actions
+page and run **gh-sync integration self-test**.
+
+The workflow checks out the revision being tested and invokes the root action
+locally with `uses: ./`, so Forgejo builds the current `Dockerfile` rather than
+using a previously published `gh-sync` tag. It uploads two small diagnostic
+assets to the stable `gh-sync-self-test` release, changes the primary asset, and
+invokes the action again with `overwrite: true`. A separate local verification
+action then queries the GitHub API, requires exactly one asset with each expected
+name, downloads the primary asset, and checks for the final
+`phase=overwrite` marker.
+
+The dedicated release and its two assets intentionally remain in place and are
+reused on subsequent runs. A concurrency group serializes this workflow on
+Forgejo versions that support workflow concurrency; Forgejo documents this as a
+best-effort safeguard. The workflow never writes the token into an artifact or
+prints it.
+
+Normal unit tests remain offline and do not need the secret or any GitHub
+credentials.
+
 ## Development
 
 The project uses only the Go standard library.

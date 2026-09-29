@@ -1,0 +1,86 @@
+name: gh-sync integration self-test
+
+on:
+  workflow_dispatch:
+
+# The test intentionally reuses one release and fixed asset names. Queue runs so
+# two executions do not delete and upload the same assets at the same time.
+concurrency:
+  group: gh-sync-integration-self-test
+  cancel-in-progress: false
+
+jobs:
+  self-test:
+    runs-on: docker
+    steps:
+      - name: Check out the current gh-sync revision
+        uses: https://data.forgejo.org/actions/checkout@v6
+
+      - name: Generate initial test artifacts
+        shell: sh
+        run: |
+          set -eu
+          rm -rf self-test
+          mkdir -p self-test
+          {
+            echo 'gh-sync integration self-test'
+            echo 'phase=initial'
+            echo 'source repository: pubcode.archuser.org/actions/gh-sync'
+            echo 'target repository: firebadnofire/sync-test'
+            echo "source commit: ${FORGEJO_SHA:-${GITHUB_SHA:-unknown}}"
+            echo "run id: ${FORGEJO_RUN_ID:-${GITHUB_RUN_ID:-unknown}}"
+          } > self-test/gh-sync-self-test.txt
+          {
+            echo 'gh-sync integration self-test secondary artifact'
+            echo 'asset=secondary'
+            echo 'source repository: pubcode.archuser.org/actions/gh-sync'
+            echo 'target repository: firebadnofire/sync-test'
+          } > self-test/gh-sync-self-test-secondary.txt
+
+      - name: Publish initial assets with the current checkout
+        uses: ./
+        with:
+          repository: firebadnofire/sync-test
+          token: ${{ secrets.GH_SYNC_TOKEN }}
+          tag: gh-sync-self-test
+          name: gh-sync integration self-test
+          body: |
+            Automated integration test release produced by the Forgejo CI self-test.
+            This stable release is intentionally reused by every test run.
+          files: |
+            self-test/gh-sync-self-test.txt
+            self-test/gh-sync-self-test-secondary.txt
+          overwrite: true
+
+      - name: Change the primary artifact for overwrite testing
+        shell: sh
+        run: |
+          set -eu
+          {
+            echo 'gh-sync integration self-test'
+            echo 'phase=overwrite'
+            echo 'source repository: pubcode.archuser.org/actions/gh-sync'
+            echo 'target repository: firebadnofire/sync-test'
+            echo "source commit: ${FORGEJO_SHA:-${GITHUB_SHA:-unknown}}"
+            echo "run id: ${FORGEJO_RUN_ID:-${GITHUB_RUN_ID:-unknown}}"
+          } > self-test/gh-sync-self-test.txt
+
+      - name: Republish the same asset names
+        uses: ./
+        with:
+          repository: firebadnofire/sync-test
+          token: ${{ secrets.GH_SYNC_TOKEN }}
+          tag: gh-sync-self-test
+          name: gh-sync integration self-test
+          body: |
+            Automated integration test release produced by the Forgejo CI self-test.
+            This stable release is intentionally reused by every test run.
+          files: |
+            self-test/gh-sync-self-test.txt
+            self-test/gh-sync-self-test-secondary.txt
+          overwrite: true
+
+      - name: Independently verify the GitHub release and downloaded content
+        uses: ./integration/verify-self-test
+        with:
+          token: ${{ secrets.GH_SYNC_TOKEN }}

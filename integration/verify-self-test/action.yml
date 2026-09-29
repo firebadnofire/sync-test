@@ -1,0 +1,9 @@
+name: Verify gh-sync self-test release
+description: Verify the fixed firebadnofire/sync-test integration release
+inputs:
+  token:
+    description: GitHub token used to read the integration release
+    required: true
+runs:
+  using: docker
+  image: Dockerfile
